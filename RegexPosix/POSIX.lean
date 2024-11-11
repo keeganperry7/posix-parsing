@@ -44,6 +44,41 @@ theorem POSIX_char (s : List α) (c : α) (v : Value α) :
   cases h
   simp
 
+theorem POSIX_mul_nil (r₁ r₂ : RegularExpression α) (v₁ v₂ : Value α) :
+  POSIX [] r₁ v₁ → POSIX [] r₂ v₂ → POSIX [] (comp r₁ r₂) (seq v₁ v₂) := by
+  intro h₁ h₂
+  rw [←List.append_nil []]
+  apply POSIX.mul
+  exact h₁
+  exact h₂
+  intro hn
+  let ⟨s₃, _, hs₃, hs, _⟩ := hn
+  simp at hs
+  absurd hs₃
+  exact hs.left
+
+theorem POSIX_inhab {s : List α} {r : RegularExpression α} {v : Value α} :
+  POSIX s r v → Inhab v r := by
+  intro h
+  induction h with
+  | epsilon => apply Inhab.empty
+  | char c => apply Inhab.char
+  | left s r₁ r₂ v₁ h ih =>
+    apply Inhab.left
+    exact ih
+  | right s r₁ r₂ v₂ h hn ih =>
+    apply Inhab.right
+    exact ih
+  | mul s₁ s₂ r₁ r₂ v₁ v₂ h₁ h₂ hn ih₁ ih₂ =>
+    apply Inhab.seq
+    exact ih₁
+    exact ih₂
+  | star_nil r => apply Inhab.star_nil
+  | stars s₁ s₂ r v vs h₁ h₂ hv hn ih₁ ih₂ =>
+    apply Inhab.stars
+    exact ih₁
+    exact ih₂
+
 -- Theorem 1 Part 1
 theorem correctness (s : List α) (r : RegularExpression α) (v : Value α) :
   POSIX s r v → s ∈ r.matches' ∧ v.flat = s := by
