@@ -32,6 +32,19 @@ inductive POSIX : List α → RegularExpression α → Value α → Prop
     ¬(∃ s₃ s₄, s₃ ≠ [] ∧ s₃ ++ s₄ = s₂ ∧ s₁ ++ s₃ ∈ r.matches' ∧ s₄ ∈ (star r).matches') →
     POSIX (s₁ ++ s₂) (star r) (stars (v::vs))
 
+theorem POSIX_epsilon (s : List α) (v : Value α) :
+  POSIX s epsilon v → s = [] ∧ v = empty := by
+  intro h
+  cases h
+  simp
+
+theorem POSIX_char (s : List α) (c : α) (v : Value α) :
+  POSIX s (char c) v → s = [c] ∧ v = Value.char c := by
+  intro h
+  cases h
+  simp
+
+-- Theorem 1 Part 1
 theorem correctness (s : List α) (r : RegularExpression α) (v : Value α) :
   POSIX s r v → s ∈ r.matches' ∧ v.flat = s := by
   intro h
@@ -58,4 +71,43 @@ theorem correctness (s : List α) (r : RegularExpression α) (v : Value α) :
     simp
     rw [ih₁.right, ih₂.right]
     simp
+    let ⟨L, hs₂, hL⟩ := ih₂.left
+    use [s₁] ++ L
+    simp
+    exact ⟨hs₂, ih₁.left, hL⟩
+
+-- Theorem 1 Part 2
+theorem uniqueness (s : List α) (r : RegularExpression α) (v v' : Value α) :
+  POSIX s r v ∧ POSIX s r v' → v = v' := by
+  intro ⟨h₁, h₂⟩
+  induction h₁ generalizing v' with
+  | epsilon =>
+    apply POSIX_epsilon at h₂
+    rw [h₂.right]
+  | char c =>
+    apply POSIX_char at h₂
+    rw [h₂.right]
+  | left s r₁ r₂ v hv ih =>
+    cases h₂ with
+    | left _ _ _ v' hv' =>
+      apply ih at hv'
+      simp
+      exact hv'
+    | right _ _ _ v' hv' hn =>
+      apply correctness at hv
+      absurd hn
+      exact hv.left
+  | right s r₁ r₂ v hv hn ih =>
+    cases h₂ with
+    | left _ _ _ v' hv' =>
+      apply correctness at hv'
+      absurd hn
+      exact hv'.left
+    | right _ _ _ v' hv' _=>
+      apply ih at hv'
+      simp
+      exact hv'
+  | mul s₁ s₂ r₁ r₂ v₁ v₂ hv₁ hv₂ hn ih₁ ih₂ =>
     sorry
+  | star_nil => sorry
+  | stars => sorry
