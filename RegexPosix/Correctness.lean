@@ -169,7 +169,56 @@ theorem matches_deriv (r : RegularExpression α) (x : α) (xs : List α) :
 -- Lemma 3
 theorem posix_deriv (s : List α) (r : RegularExpression α) (v : Value α) (c : α) (h : POSIX s (r.deriv c) v) :
   POSIX (c::s) r (inj r c ⟨v, POSIX_inhab h⟩).fst := by
-  sorry
+  induction r generalizing v s with
+  | zero =>
+    simp at h
+    cases h
+  | epsilon =>
+    simp at h
+    cases h
+  | char d =>
+    simp [deriv] at h
+    split_ifs at h with hc
+    · cases h
+      simp [hc] at h
+      simp [inj, hc]
+      apply POSIX.char
+    · cases h
+  | plus r₁ r₂ ih₁ ih₂ =>
+    match v with
+    | Value.left v' =>
+      cases h with
+      | left _ _ _ _ h =>
+        apply ih₁ at h
+        apply POSIX.left
+        exact h
+    | Value.right v' =>
+      cases h with
+      | right _ _ _ _ h hn =>
+        apply ih₂ at h
+        apply POSIX.right
+        exact h
+        rw [matches_deriv]
+        exact hn
+  | comp r₁ r₂ ih₁ ih₂ =>
+    simp [deriv] at h
+    split_ifs at h with hn
+    · cases h with
+      | left _ _ _ v' h' =>
+        simp [hn] at h
+        cases h' with
+        | mul => sorry
+      | right _ _ _ v' h' hn' =>
+        simp [hn] at h
+        apply ih₂ at h'
+        sorry
+    · cases h with
+      | mul s₁ s₂ _ _ v₁ v₂ h₁ h₂ hn' =>
+        simp_rw [←matches_deriv] at hn'
+        simp [hn] at h
+        apply ih₁ at h₁
+        sorry
+  | star => sorry
 
 -- Theorem 2 Part 1
 theorem lexer_none_iff (s : List α) (r : RegularExpression α) :
