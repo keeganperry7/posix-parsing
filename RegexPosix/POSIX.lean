@@ -41,7 +41,7 @@ theorem POSIX.inhab {r : Regex α} {v : Value α} : POSIX r v → Inhab v r
   | star_nil => Inhab.star_nil
   | stars h₁ h₂ hv hn => Inhab.stars (inhab h₁) (inhab h₂)
 
-theorem POSIX_matches {r : Regex α} {v : Value α} : POSIX r v → r.Matches v.flat
+theorem POSIX.matches {r : Regex α} {v : Value α} : POSIX r v → r.Matches v.flat
   | .epsilon => by
     rw [Value.flat]
     exact Matches.epsilon
@@ -50,19 +50,19 @@ theorem POSIX_matches {r : Regex α} {v : Value α} : POSIX r v → r.Matches v.
     exact Matches.char
   | .left h => by
     rw [Value.flat]
-    exact Matches.plus_left (POSIX_matches h)
+    exact Matches.plus_left (POSIX.matches h)
   | .right h hn => by
     rw [Value.flat]
-    exact Matches.plus_right (POSIX_matches h)
+    exact Matches.plus_right (POSIX.matches h)
   | .mul h₁ h₂ hn => by
     rw [Value.flat]
-    exact Matches.mul rfl (POSIX_matches h₁) (POSIX_matches h₂)
+    exact Matches.mul rfl (POSIX.matches h₁) (POSIX.matches h₂)
   | .star_nil => by
     rw [Value.flat]
     exact Matches.star_nil
   | .stars h₁ h₂ hv hn => by
     rw [Value.flat]
-    exact Matches.stars hv rfl (POSIX_matches h₁) (POSIX_matches h₂)
+    exact Matches.stars hv rfl (POSIX.matches h₁) (POSIX.matches h₂)
 
 theorem longest_split_unique {r₁ r₂ : Regex α} {s₁₁ s₁₂ s₂₁ s₂₂ : List α}
   (hs : s₁₁ ++ s₁₂ = s₂₁ ++ s₂₂)
@@ -88,7 +88,7 @@ theorem longest_split_unique {r₁ r₂ : Regex α} {s₁₁ s₁₂ s₂₁ s�
     | cons x xs =>
       exact absurd hr₁₂ (h₂ (x::xs) (by simp) s₁₂ rfl hr₁₁)
 
-theorem POSIX_unique {r : Regex α} {v₁ v₂ : Value α} (hv : v₁.flat = v₂.flat) (h₁ : POSIX r v₁) (h₂ : POSIX r v₂) :
+theorem POSIX.unique {r : Regex α} {v₁ v₂ : Value α} (hv : v₁.flat = v₂.flat) (h₁ : POSIX r v₁) (h₂ : POSIX r v₂) :
   v₁ = v₂ := by
   induction h₁ generalizing v₂ with
   | epsilon =>
@@ -106,13 +106,13 @@ theorem POSIX_unique {r : Regex α} {v₁ v₂ : Value α} (hv : v₁.flat = v�
     | right h₂ hn =>
       simp at hv
       rw [←hv] at hn
-      exact absurd (POSIX_matches h₁) hn
+      exact absurd (POSIX.matches h₁) hn
   | right h₁ hn ih =>
     cases h₂ with
     | left h₂ =>
       simp at hv
       rw [hv] at hn
-      exact absurd (POSIX_matches h₂) hn
+      exact absurd (POSIX.matches h₂) hn
     | right h₂ hn' =>
       rw [right.injEq]
       simp at hv
@@ -121,7 +121,7 @@ theorem POSIX_unique {r : Regex α} {v₁ v₂ : Value α} (hv : v₁.flat = v�
     cases h₂ with
     | mul h₂₁ h₂₂ hn₂ =>
       simp at hv
-      have hv' := longest_split_unique hv (POSIX_matches h₁₁) (POSIX_matches h₁₂) (POSIX_matches h₂₁) (POSIX_matches h₂₂) hn₁ hn₂
+      have hv' := longest_split_unique hv (POSIX.matches h₁₁) (POSIX.matches h₁₂) (POSIX.matches h₂₁) (POSIX.matches h₂₂) hn₁ hn₂
       rw [ih₁ hv'.left h₂₁, ih₂ hv'.right h₂₂]
   | star_nil =>
     cases h₂ with
@@ -136,7 +136,7 @@ theorem POSIX_unique {r : Regex α} {v₁ v₂ : Value α} (hv : v₁.flat = v�
       exact absurd hv.left hv'
     | stars h₂₁ h₂₂ _ hn₂ =>
       simp at hv
-      have hv' := longest_split_unique hv (POSIX_matches h₁₁) (POSIX_matches h₁₂) (POSIX_matches h₂₁) (POSIX_matches h₂₂) hn₁ hn₂
+      have hv' := longest_split_unique hv (POSIX.matches h₁₁) (POSIX.matches h₁₂) (POSIX.matches h₂₁) (POSIX.matches h₂₂) hn₁ hn₂
       have ih₂ := ih₂ hv'.right h₂₂
       simp at ih₂
       rw [ih₁ hv'.left h₂₁, ih₂]

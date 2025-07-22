@@ -141,6 +141,6 @@ theorem parse_posix_iff (r : Regex α) (s : List α) (v : Value α) :
     exact ⟨List.append_nil s, injs_posix (mkeps_posix hn)⟩
   · intro ⟨hv, h⟩
     subst hv
-    rcases (matches_parse_posix_iff.mp (POSIX_matches h)) with ⟨v', h', h''⟩
-    rw [POSIX_unique (parse_flat h') h'' h] at h'
+    rcases (matches_parse_posix_iff.mp h.matches) with ⟨v', h', h''⟩
+    rw [POSIX.unique (parse_flat h') h'' h] at h'
     exact h'
