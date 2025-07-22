@@ -1,323 +1,349 @@
-import RegexPosix.Value
 import RegexPosix.POSIX
-import RegexPosix.Lexer
+import RegexPosix.Parse
+
+open Regex
+open Value
 
 universe u
 
 variable {α : Type u}
 
-open RegularExpression
+-- theorem posix_mkeps {r : Regex α} {v : Value α} (hv : v.flat = []) :
+--   (∃ hn, (r.mkeps hn).fst = v) ↔ POSIX r v := by
+--   induction r with
+--   | emptyset => exact ⟨nofun, nofun⟩
+--   | epsilon =>
+--     simp [mkeps]
+--     constructor
+--     · intro h
+--       subst h
+--       exact POSIX.epsilon
+--     · intro h
+--       cases h
+--       rfl
+--   | char c =>
+--     constructor
+--     · nofun
+--     · intro h
+--       cases h
+--       simp at hv
+--   | plus r₁ r₂ ih₁ ih₂ =>
+--     constructor
+--     · sorry
+--     · sorry
+--   | mul r₁ r₂ => sorry
+--   | star r => sorry
 
-theorem matchEpsilon_iff (r : RegularExpression α) :
-  [] ∈ r.matches' ↔ r.matchEpsilon := by
+theorem mkeps_posix {r : Regex α} (hn : r.nullable) :
+  POSIX r (r.mkeps hn).fst := by
   induction r with
-  | zero => simp [matchEpsilon]
-  | epsilon => simp [matchEpsilon]
-  | char =>
-    simp [matchEpsilon]
-    intro h
-    cases h
-  | plus r₁ r₂ ih₁ ih₂ =>
-    simp [matchEpsilon]
-    rw [←ih₁, ←ih₂]
-    rfl
-  | comp r₁ r₂ ih₁ ih₂ =>
-    simp [matchEpsilon]
-    rw [←ih₁, ←ih₂]
-    constructor
-    · intro h
-      let ⟨u, hu, v, hv, huv⟩ := h
-      simp at huv
-      rw [huv.left] at hu
-      rw [huv.right] at hv
-      exact ⟨hu, hv⟩
-    · intro h
-      exact ⟨[], h.left, [], h.right, rfl⟩
-  | star r ih =>
-    simp [matchEpsilon]
-    apply Language.nil_mem_kstar
-
--- Lemma 2
-theorem nullable_posix (r : RegularExpression α) (hr : r.matchEpsilon) :
-  POSIX [] r (mkeps ⟨r, hr⟩).fst := by
-  induction r with
-  | zero => simp [matchEpsilon] at hr
+  | emptyset => simp [nullable] at hn
   | epsilon =>
     simp only [mkeps]
     apply POSIX.epsilon
-  | char => simp [matchEpsilon] at hr
+  | char => simp [nullable] at hn
   | plus r₁ r₂ ih₁ ih₂ =>
+    simp at hn
     simp only [mkeps]
-    simp [matchEpsilon] at hr
-    cases hr with
-    | inl hr =>
-      simp [hr]
-      apply ih₁ at hr
-      apply POSIX.left
-      exact hr
-    | inr hr =>
-      by_cases hr' : r₁.matchEpsilon
-      · simp [hr']
-        apply ih₁ at hr'
-        apply POSIX.left
-        exact hr'
-      · simp [hr']
-        apply ih₂ at hr
-        apply POSIX.right
-        exact hr
-        simp at hr'
-        contrapose hr'
-        simp at *
-        rw [matchEpsilon_iff] at hr'
-        exact hr'
-  | comp r₁ r₂ ih₁ ih₂ =>
-    simp [matchEpsilon] at hr
-    let ⟨hr₁, hr₂⟩ := hr
-    apply ih₁ at hr₁
-    apply ih₂ at hr₂
+    split_ifs with hn'
+    · exact POSIX.left (ih₁ hn')
+    · apply POSIX.right
+      exact ih₂ (Or.resolve_left hn hn')
+      rw [mkeps_flat]
+      rw [←nullable_iff_matches_nil]
+      exact hn'
+  | mul r₁ r₂ ih₁ ih₂ =>
+    simp at hn
     simp only [mkeps]
-    apply POSIX_mul_nil
-    exact hr₁
-    exact hr₂
+    apply POSIX.mul
+    exact ih₁ hn.left
+    exact ih₂ hn.right
+    rw [mkeps_flat]
+    simp_all
   | star r ih =>
     simp only [mkeps]
     apply POSIX.star_nil
 
 variable [DecidableEq α]
 
-theorem matches_deriv (r : RegularExpression α) (x : α) (xs : List α) :
-  x::xs ∈ r.matches' ↔ xs ∈ (r.deriv x).matches' := by
-  induction r generalizing xs with
-  | zero => simp
-  | epsilon => simp
-  | char c =>
-    simp [deriv]
+theorem deriv_posix' (r : Regex α) (v v' : Value α) (c : α) (hv : v.flat = c::v'.flat) (hv' : POSIX (r.deriv c) v') :
+  (inj r c ⟨v', hv'.inhab⟩).fst = v ↔ POSIX r v := by
+  induction r generalizing v v' with
+  | emptyset => exact ⟨nofun, nofun⟩
+  | epsilon =>
     constructor
+    · nofun
     · intro h
       cases h
-      simp
-    · intro h
-      split_ifs at h with hc
-      · cases h
-        rw [hc]
-        ext
-        rfl
-      · cases h
-  | plus r₁ r₂ ih₁ ih₂ =>
-    simp
-    constructor
-    · intro h
-      cases h with
-      | inl h =>
-        rw [ih₁] at h
-        exact Or.inl h
-      | inr h =>
-        rw [ih₂] at h
-        exact Or.inr h
-    · intro h
-      cases h with
-      | inl h =>
-        rw [←ih₁] at h
-        exact Or.inl h
-      | inr h =>
-        rw [←ih₂] at h
-        exact Or.inr h
-  | comp r₁ r₂ ih₁ ih₂ =>
-    constructor
-    · intro h
-      simp at h
-      let ⟨a, ha, b, hb, hab⟩ := h
-      simp at hab
-      cases a with
-      | nil =>
-        simp at hab
-        rw [hab] at hb
-        rw [ih₂] at hb
-        rw [matchEpsilon_iff] at ha
-        simp [deriv, ha]
-        exact Or.inr hb
-      | cons y ys =>
-        simp at hab
-        rw [hab.left] at ha
-        rw [ih₁] at ha
-        simp [deriv]
-        split_ifs
-        · exact Or.inl ⟨ys, ha, b, hb, hab.right⟩
-        · exact ⟨ys, ha, b, hb, hab.right⟩
-    · intro h
-      simp [deriv] at h
-      split_ifs at h with hr₁
-      · simp at h
-        cases h with
-        | inl h =>
-          let ⟨a, ha, b, hb, hab⟩ := h
-          rw [←ih₁] at ha
-          simp at hab
-          rw [←hab]
-          exact ⟨x::a, ha, b, hb, rfl⟩
-        | inr h =>
-          rw [←matchEpsilon_iff] at hr₁
-          rw [←ih₂] at h
-          exact ⟨[], hr₁, x::xs, h, rfl⟩
-      · let ⟨a, ha, b, hb, hab⟩ := h
-        rw [←ih₁] at ha
-        simp at hab
-        rw [←hab]
-        exact ⟨x::a, ha, b, hb, rfl⟩
-  | star => sorry
-
--- Lemma 3
-theorem posix_deriv (s : List α) (r : RegularExpression α) (v : Value α) (c : α) (h : POSIX s (r.deriv c) v) :
-  POSIX (c::s) r (inj r c ⟨v, POSIX_inhab h⟩).fst := by
-  induction r generalizing v s with
-  | zero =>
-    simp at h
-    cases h
-  | epsilon =>
-    simp at h
-    cases h
+      simp at hv
   | char d =>
-    simp [deriv] at h
-    split_ifs at h with hc
-    · cases h
-      simp [hc] at h
-      simp [inj, hc]
-      apply POSIX.char
-    · cases h
+    constructor
+    · intro h
+      simp at hv'
+      split_ifs at hv' with hc
+      · subst hc
+        simp at hv'
+        cases hv'
+        simp [inj] at h
+        subst h
+        exact POSIX.char c
+      · nomatch v'
+    · intro h
+      cases h
+      simp at hv
+      cases hv.left
+      simp [inj]
   | plus r₁ r₂ ih₁ ih₂ =>
-    match v with
-    | Value.left v' =>
-      cases h with
-      | left _ _ _ _ h =>
-        apply ih₁ at h
+    cases hv' with
+    | left hv' =>
+      simp [inj]
+      constructor
+      · intro h
+        subst h
         apply POSIX.left
-        exact h
-    | Value.right v' =>
-      cases h with
-      | right _ _ _ _ h hn =>
-        apply ih₂ at h
+        rw [←ih₁]
+        simp [inj_flat]
+        exact hv'
+      · intro h
+        cases h with
+        | left h =>
+          simp at hv
+          rw [left.injEq, ih₁ _ _ hv hv']
+          exact h
+        | right h hn =>
+          simp at hv
+          rw [hv] at hn
+          exact absurd (Matches_deriv.mpr (POSIX_matches hv')) hn
+    | right hv' hn =>
+      simp [inj]
+      constructor
+      · intro h
+        subst h
         apply POSIX.right
-        exact h
-        rw [matches_deriv]
+        rw [←ih₂]
+        simp [inj_flat]
+        exact hv'
+        simp at hv
+        rw [←Matches_deriv, ←hv] at hn
         exact hn
-  | comp r₁ r₂ ih₁ ih₂ =>
-    simp [deriv] at h
-    split_ifs at h with hn
-    · cases h with
-      | left _ _ _ v' h' =>
-        simp [hn] at h
-        cases h' with
-        | mul => sorry
-      | right _ _ _ v' h' hn' =>
-        simp [hn] at h
-        apply ih₂ at h'
-        sorry
-    · cases h with
-      | mul s₁ s₂ _ _ v₁ v₂ h₁ h₂ hn' =>
-        simp_rw [←matches_deriv] at hn'
-        simp [hn] at h
-        apply ih₁ at h₁
-        sorry
-  | star => sorry
-
--- Theorem 2 Part 1
-theorem lexer_none_iff (s : List α) (r : RegularExpression α) :
-  s ∉ r.matches' ↔ lexer r s = none := by
-  induction s generalizing r with
-  | nil =>
-    simp [lexer]
-    rw [matchEpsilon_iff]
-    simp
-  | cons x xs ih =>
-    constructor
-    · intro h
-      rw [matches_deriv] at h
-      rw [ih] at h
-      simp [lexer]
-      rw [h]
-    · intro h
-      simp [lexer] at h
-      generalize h' : lexer (r.deriv x) xs = v
-      rw [h'] at h
-      cases v with
-      | none =>
-        rw [←ih] at h'
-        contrapose h'
-        simp at *
-        rw [matches_deriv] at h'
-        exact h'
-      | some => simp at h
-
--- Theorem 2 Part 2
-theorem lexer_some_iff (s : List α) (r : RegularExpression α) :
-  s ∈ r.matches' ↔ ∃ v, lexer r s = some v ∧ POSIX s r v.fst := by
-  induction s generalizing r with
-  | nil =>
-    rw [matchEpsilon_iff]
-    constructor
-    · intro h
-      have := nullable_posix r h
-      use mkeps ⟨r, h⟩
-      constructor
-      · simp [lexer]
-        exact h
-      · exact this
-    · intro ⟨v, h₁, h₂⟩
-      simp [lexer] at h₁
-      let ⟨h, _⟩ := h₁
-      exact h
-  | cons x xs ih =>
-    constructor
-    · intro h
-      rw [matches_deriv] at h
-      rw [ih] at h
-      let ⟨v, h₁, h₂⟩ := h
-      have h := posix_deriv xs r v.fst x h₂
-      use (inj r x ⟨v.fst, POSIX_inhab h₂⟩)
-      constructor
-      · simp [lexer, h₁]
-      · exact h
-    · intro ⟨v, h₁, h₂⟩
-      apply correctness at h₂
-      exact h₂.left
-
--- Corollary 1 Part 1
-theorem lexer_posix_none_iff (r : RegularExpression α) (s : List α) :
-  lexer r s = none ↔ ¬(∃ v, POSIX s r v) := by
-  constructor
-  · intro h
-    rw [←lexer_none_iff] at h
-    contrapose h
-    simp at *
-    let ⟨v, h⟩ := h
-    apply correctness at h
-    exact h.left
-  · intro h
-    rw [←lexer_none_iff]
-    contrapose h
-    simp at *
-    rw [lexer_some_iff] at h
-    let ⟨v, h₁, h₂⟩ := h
-    use v.fst
-
--- Corollary 1 Part 2
-theorem lexer_posix_some_iff (r : RegularExpression α) (s : List α) (v : Σ' v : Value α, Inhab v r) :
-  lexer r s = some v ↔ POSIX s r v.fst := by
-  constructor
-  · intro h
-    by_cases hs : s ∈ r.matches'
-    · rw [lexer_some_iff] at hs
-      let ⟨v', h₁, h₂⟩ := hs
-      -- use uniqueness of posix values
-      sorry
-    · rw [lexer_none_iff] at hs
-      -- absurd by h and hs
-      sorry
-  · intro h
-    have := correctness _ _ _ h
-    let ⟨hs, _⟩ := this
-    rw [lexer_some_iff] at hs
-    let ⟨v', h₁, h₂⟩ := hs
-    have := uniqueness _ _ _ _ ⟨h, h₂⟩
-    -- Need to show uniqueness of inhabition
+      · intro h
+        cases h with
+        | left h =>
+          simp at hv
+          rw [←Matches_deriv, ←hv] at hn
+          exact absurd (POSIX_matches h) hn
+        | right h hn' =>
+          simp at hv
+          rw [right.injEq, ih₂ _ _ hv hv']
+          exact h
+  | mul r₁ r₂ ih₁ ih₂ =>
     sorry
+  | star r ih =>
+    match v' with
+    | Value.seq v' (Value.stars vs') =>
+      simp [inj]
+      cases hv' with
+      | mul h₁ h₂ hn =>
+        constructor
+        · intro h
+          subst h
+          apply POSIX.stars
+          rw [←ih]
+          simp [inj_flat]
+          exact h₁
+          exact h₂
+          simp [inj_flat]
+          simp_rw [inj_flat, List.cons_append, Matches_deriv]
+          exact hn
+        · sorry
+
+theorem derivs_posix' (r : Regex α) (v v' : Value α) (s : List α) (hv : v.flat = s ++ v'.flat) (hv' : POSIX (r.derivs s) v') :
+  (injs r s ⟨v', hv'.inhab⟩).fst = v ↔ POSIX r v := by
+  induction s generalizing r v with
+  | nil =>
+    simp [injs]
+    simp at hv
+    simp at hv'
+    constructor
+    · intro h
+      subst h
+      exact hv'
+    · intro h
+      exact POSIX_unique (hv.symm) hv' h
+  | cons x xs ih =>
+    simp [injs]
+    rw [deriv_posix']
+    simp [injs_flat, hv]
+    rw [←ih _ _ (by simp [injs_flat]) hv']
+
+theorem deriv_posix (r : Regex α) (v : Value α) (c : α) (hv : Inhab v (r.deriv c)) :
+  POSIX (r.deriv c) v ↔ POSIX r (inj r c ⟨v, hv⟩).fst := by
+  induction r generalizing v with
+  | emptyset => nomatch hv
+  | epsilon => nomatch hv
+  | char d =>
+    simp [deriv] at hv
+    split_ifs at hv with hc
+    · cases hv
+      simp [hc] at hv
+      simp [inj, hc]
+      exact ⟨fun _ => POSIX.char d, fun _ => POSIX.epsilon⟩
+    · nomatch hv
+  | plus r₁ r₂ ih₁ ih₂ =>
+    cases hv with
+    | left hv =>
+      simp [inj]
+      constructor
+      · intro h
+        cases h with
+        | left h =>
+          rw [ih₁ _ hv] at h
+          exact POSIX.left h
+      · intro h
+        cases h with
+        | left h =>
+          rw [←ih₁ _ hv] at h
+          exact POSIX.left h
+    | right hv =>
+      simp [inj]
+      constructor
+      · intro h
+        cases h with
+        | right h hn =>
+          rw [ih₂ _ hv] at h
+          rw [←Matches_deriv] at hn
+          refine POSIX.right h ?_
+          rw [inj_flat]
+          exact hn
+      · intro h
+        cases h with
+        | right h hn =>
+          rw [←ih₂ _ hv] at h
+          rw [inj_flat, Matches_deriv] at hn
+          exact POSIX.right h hn
+  | mul r₁ r₂ ih₁ ih₂ =>
+    simp [deriv]
+    split_ifs with hr₁
+    · simp [hr₁] at hv
+      simp [inj, hr₁]
+      split
+      · constructor
+        · intro h
+          match h with
+          | POSIX.left (POSIX.mul h₁ h₂ hn) =>
+            rw [ih₁ _ (inhab_seq_fst (inhab_left hv))] at h₁
+            refine POSIX.mul h₁ h₂ ?_
+            simp_rw [inj_flat, List.cons_append, Matches_deriv]
+            exact hn
+        · intro h
+          cases h with
+          | mul h₁ h₂ hn =>
+            rw [←ih₁ _ (inhab_seq_fst (inhab_left hv))] at h₁
+            simp_rw [inj_flat, List.cons_append, Matches_deriv] at hn
+            exact POSIX.left (POSIX.mul h₁ h₂ hn)
+      · constructor
+        · intro h
+          cases h with
+          | right h hn =>
+            rw [ih₂ _ (inhab_right hv)] at h
+            refine POSIX.mul (mkeps_posix hr₁) h ?_
+            simp
+            intro x hx y hxy hr₁ hr₂
+            rw [inj_flat] at hxy
+            simp [mkeps_flat] at hr₁
+            rw [List.append_eq_cons_iff] at hxy
+            simp [hx] at hxy
+            rcases hxy with ⟨z, hx, hs⟩
+            rw [hx] at hr₁
+            rw [Matches_deriv] at hr₁
+            rw [hs] at hn
+            exact absurd (Matches.mul rfl hr₁ hr₂) hn
+        · intro h
+          cases h with
+          | mul h₁ h₂ hn =>
+            rw [←ih₂ _ (inhab_right hv)] at h₂
+            refine POSIX.right h₂ ?_
+            simp_rw [inj_flat, mkeps_flat] at hn
+            intro h
+            rename_i v₂ _
+            generalize hs : v₂.flat = s at h
+            cases h with
+            | @mul s₁ s₂ _ _ _ hs' h₁' h₂' =>
+              subst hs
+              rw [←Matches_deriv] at h₁'
+              simp at hn
+              exact absurd h₂' (hn (c::s₁) (by simp) s₂ (by simp [hs']) h₁')
+    · simp [hr₁] at hv
+      simp [inj, hr₁]
+      split
+      constructor
+      · intro h
+        cases h with
+        | mul h₁ h₂ hn =>
+          rw [ih₁ _ (inhab_seq_fst hv)] at h₁
+          refine POSIX.mul h₁ h₂ ?_
+          simp_rw [inj_flat, List.cons_append, Matches_deriv]
+          exact hn
+      · intro h
+        cases h with
+        | mul h₁ h₂ hn =>
+          rw [←ih₁ _ (inhab_seq_fst hv)] at h₁
+          simp_rw [inj_flat, List.cons_append, Matches_deriv] at hn
+          exact POSIX.mul h₁ h₂ hn
+  | star r ih =>
+    match v with
+    | Value.seq v (Value.stars vs) =>
+      simp [inj]
+      constructor
+      · intro h
+        cases h with
+        | mul h₁ h₂ hs =>
+          rw [ih _ (inhab_seq_fst hv)] at h₁
+          refine POSIX.stars h₁ h₂ ?_ ?_
+          simp [inj_flat]
+          simp_rw [inj_flat, List.cons_append, Matches_deriv]
+          exact hs
+      · intro h
+        cases h with
+        | stars h₁ h₂ hs hn =>
+          rw [←ih _ (inhab_seq_fst hv)] at h₁
+          refine POSIX.mul h₁ h₂ ?_
+          simp_rw [inj_flat, List.cons_append, Matches_deriv] at hn
+          exact hn
+
+theorem derivs_posix (r : Regex α) (v : Value α) (s : List α) (hv : Inhab v (r.derivs s)) :
+  POSIX (r.derivs s) v ↔ POSIX r (injs r s ⟨v, hv⟩).fst := by
+  induction s generalizing r with
+  | nil => rfl
+  | cons x xs ih =>
+    simp [injs]
+    rw [←deriv_posix]
+    exact ih _ hv
+
+theorem parse_posix_iff (r : Regex α) (s : List α) (v : Value α) (hv : v.flat = s) :
+  r.parse s = some v ↔ POSIX r v := by
+  rw [parse]
+  subst hv
+  split_ifs with hn
+  · rw [Option.some.injEq, derivs_posix']
+    simp [mkeps_flat]
+    exact mkeps_posix hn
+  · rw [false_iff]
+    intro h
+    rw [nullable_iff_matches_nil, ←Matches_derivs] at hn
+    exact absurd (POSIX_matches h) hn
+
+theorem parse_posix (r : Regex α) (s : List α) (v : Value α) (h : r.parse s = some v) :
+  POSIX r v := by
+  induction s generalizing r v with
+  | nil =>
+    simp [parse, injs] at h
+    rcases h with ⟨hn, h⟩
+    rw [←h]
+    exact mkeps_posix hn
+  | cons x xs ih =>
+    simp [parse, injs] at h
+    rcases h with ⟨hn, h⟩
+    rw [←h, ←deriv_posix]
+    apply ih
+    simp [parse, hn]
