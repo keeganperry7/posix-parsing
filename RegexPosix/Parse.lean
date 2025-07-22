@@ -124,6 +124,14 @@ def Regex.parse : Regex α → List α → Option (Value α)
       then some (injs r s (r'.mkeps h)).fst
       else none
 
+theorem parse_flat {r : Regex α} {s : List α} {v : Value α} :
+  r.parse s = some v → v.flat = s := by
+  intro h
+  simp [parse] at h
+  rcases h with ⟨hn, h⟩
+  rw [←h, injs_flat, mkeps_flat]
+  exact List.append_nil s
+
 theorem parse_matches_iff {r : Regex α} (s : List α) :
   (r.parse s).isSome ↔ r.Matches s := by
   induction s generalizing r with
