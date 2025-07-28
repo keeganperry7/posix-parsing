@@ -41,28 +41,8 @@ theorem POSIX.inhab {r : Regex α} {v : Value α} : POSIX r v → Inhab v r
   | star_nil => Inhab.star_nil
   | stars h₁ h₂ hv hn => Inhab.stars (inhab h₁) (inhab h₂)
 
-theorem POSIX.matches {r : Regex α} {v : Value α} : POSIX r v → r.Matches v.flat
-  | .epsilon => by
-    rw [Value.flat]
-    exact Matches.epsilon
-  | .char c => by
-    rw [Value.flat]
-    exact Matches.char
-  | .left h => by
-    rw [Value.flat]
-    exact Matches.plus_left (POSIX.matches h)
-  | .right h hn => by
-    rw [Value.flat]
-    exact Matches.plus_right (POSIX.matches h)
-  | .mul h₁ h₂ hn => by
-    rw [Value.flat]
-    exact Matches.mul rfl (POSIX.matches h₁) (POSIX.matches h₂)
-  | .star_nil => by
-    rw [Value.flat]
-    exact Matches.star_nil
-  | .stars h₁ h₂ hv hn => by
-    rw [Value.flat]
-    exact Matches.stars hv rfl (POSIX.matches h₁) (POSIX.matches h₂)
+theorem POSIX.matches {r : Regex α} {v : Value α} : POSIX r v → r.Matches v.flat :=
+  fun h => h.inhab.matches
 
 theorem longest_split_unique {r₁ r₂ : Regex α} {s₁₁ s₁₂ s₂₁ s₂₂ : List α}
   (hs : s₁₁ ++ s₁₂ = s₂₁ ++ s₂₂)

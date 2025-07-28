@@ -48,6 +48,40 @@ inductive Inhab : Value α → Regex α → Prop
     Inhab (stars vs) (star r) →
     Inhab (stars (v::vs)) (star r)
 
+theorem Inhab.matches {r : Regex α} {v : Value α} :
+  Inhab v r → r.Matches v.flat
+  | empty => (Value.flat.eq_def _) ▸ Matches.epsilon
+  | char c => (Value.flat.eq_def _) ▸ Matches.char
+  | left h => (Value.flat.eq_def _) ▸ Matches.plus_left h.matches
+  | right h => (Value.flat.eq_def _) ▸ Matches.plus_right h.matches
+  | seq h₁ h₂ => (Value.flat.eq_def _) ▸ Matches.mul rfl h₁.matches h₂.matches
+  | star_nil => (Value.flat.eq_def _) ▸ Matches.star_nil
+  | stars h₁ h₂ => (Value.flat.eq_def _) ▸ Matches.stars rfl h₁.matches h₂.matches
+
+theorem matches_inhab {r : Regex α} {s : List α} :
+  r.Matches s → ∃ v, v.flat = s ∧ Inhab v r := by
+  intro h
+  induction h with
+  | epsilon => exact ⟨Value.empty, by simp, Inhab.empty⟩
+  | char => exact ⟨Value.char _, by simp, Inhab.char _⟩
+  | plus_left h ih =>
+    rcases ih with ⟨v, hv, ih⟩
+    exact ⟨v.left, by simp [hv], ih.left⟩
+  | plus_right h ih =>
+    rcases ih with ⟨v, hv, ih⟩
+    exact ⟨v.right, by simp [hv], ih.right⟩
+  | mul hs h₁ h₂ ih₁ ih₂ =>
+    rcases ih₁ with ⟨v₁, hv₁, ih₁⟩
+    rcases ih₂ with ⟨v₂, hv₂, ih₂⟩
+    exact ⟨v₁.seq v₂, by simp [hv₁, hv₂, hs], ih₁.seq ih₂⟩
+  | star_nil => exact ⟨Value.stars [], by simp, Inhab.star_nil⟩
+  | stars hs h₁ h₂ ih₁ ih₂ =>
+    rcases ih₁ with ⟨v, hv, ih₁⟩
+    rcases ih₂ with ⟨vs, hvs, ih₂⟩
+    match vs with
+    | Value.stars vs =>
+      exact ⟨Value.stars (v::vs), by simp [hv, hvs, hs], Inhab.stars ih₁ ih₂⟩
+
 @[simp]
 theorem inhab_zero {v : Value α} :
   ¬Inhab v emptyset := by
