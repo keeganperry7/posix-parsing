@@ -135,10 +135,11 @@ theorem parse_posix_iff (r : Regex α) (s : List α) (v : Value α) :
   r.parse s = some v ↔ v.flat = s ∧ POSIX r v := by
   constructor
   · intro h
+    refine ⟨parse_flat h, ?_⟩
     simp [parse] at h
     rcases h with ⟨hn, h⟩
-    rw [←h, injs_flat, mkeps_flat]
-    exact ⟨List.append_nil s, injs_posix (mkeps_posix hn)⟩
+    rw [←h]
+    exact injs_posix (mkeps_posix hn)
   · intro ⟨hv, h⟩
     subst hv
     rcases (matches_parse_posix_iff.mp h.matches) with ⟨v', h', h''⟩
