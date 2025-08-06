@@ -52,8 +52,8 @@ theorem Inhab.matches {r : Regex α} {v : Value α} :
   Inhab v r → r.Matches v.flat
   | empty => (Value.flat.eq_def _) ▸ Matches.epsilon
   | char c => (Value.flat.eq_def _) ▸ Matches.char
-  | left h => (Value.flat.eq_def _) ▸ Matches.plus_left h.matches
-  | right h => (Value.flat.eq_def _) ▸ Matches.plus_right h.matches
+  | left h => (Value.flat.eq_def _) ▸ h.matches.left
+  | right h => (Value.flat.eq_def _) ▸ h.matches.right
   | seq h₁ h₂ => (Value.flat.eq_def _) ▸ Matches.mul rfl h₁.matches h₂.matches
   | star_nil => (Value.flat.eq_def _) ▸ Matches.star_nil
   | stars h₁ h₂ => (Value.flat.eq_def _) ▸ Matches.stars rfl h₁.matches h₂.matches
@@ -64,10 +64,10 @@ theorem matches_inhab {r : Regex α} {s : List α} :
   induction h with
   | epsilon => exact ⟨Value.empty, by simp, Inhab.empty⟩
   | char => exact ⟨Value.char _, by simp, Inhab.char _⟩
-  | plus_left h ih =>
+  | left h ih =>
     rcases ih with ⟨v, hv, ih⟩
     exact ⟨v.left, by simp [hv], ih.left⟩
-  | plus_right h ih =>
+  | right h ih =>
     rcases ih with ⟨v, hv, ih⟩
     exact ⟨v.right, by simp [hv], ih.right⟩
   | mul hs h₁ h₂ ih₁ ih₂ =>

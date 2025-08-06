@@ -15,7 +15,8 @@ def Regex.mkeps : (r : Regex α) → r.nullable → (Σ' v : Value α, Inhab v r
         have ⟨v₁, h₁⟩ := mkeps r₁ hn₁
         ⟨Value.left v₁, Inhab.left h₁⟩
       else
-        have ⟨v₂, h₂⟩ := mkeps r₂ (Or.resolve_left (Bool.or_eq_true _ _ ▸ hn) hn₁)
+        have hn₂ := (Bool.or_eq_true_iff.mp hn).resolve_left hn₁
+        have ⟨v₂, h₂⟩ := mkeps r₂ hn₂
         ⟨Value.right v₂, Inhab.right h₂⟩
   | mul r₁ r₂, hn =>
     have ⟨v₁, h₁⟩ := mkeps r₁ (Bool.and_elim_left hn)
@@ -139,5 +140,5 @@ theorem parse_matches_iff {r : Regex α} (s : List α) :
     rw [←nullable_iff_matches_nil]
     simp [parse]
   | cons x xs ih =>
-    rw [Matches_deriv, ←ih]
+    rw [Matches.deriv_iff, ←ih]
     simp [parse]

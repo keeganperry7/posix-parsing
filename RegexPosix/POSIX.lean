@@ -1,5 +1,4 @@
 import RegexPosix.Value
-import Aesop
 
 open Regex
 open Value

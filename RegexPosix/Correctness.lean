@@ -66,7 +66,7 @@ theorem inj_posix {r : Regex α} {v : Value α} {c : α} (h : POSIX (r.deriv c) 
       | right h hn =>
         simp [inj]
         refine POSIX.right (ih₂ h) ?_
-        rw [inj_flat, Matches_deriv]
+        rw [inj_flat, Matches.deriv_iff]
         exact hn
   | mul r₁ r₂ ih₁ ih₂ =>
     simp [deriv] at h
@@ -78,7 +78,7 @@ theorem inj_posix {r : Regex α} {v : Value α} {c : α} (h : POSIX (r.deriv c) 
         | mul h₁ h₂ hs =>
           simp [inj, hn]
           refine POSIX.mul (ih₁ h₁) h₂ ?_
-          simp_rw [inj_flat, List.cons_append, Matches_deriv]
+          simp_rw [inj_flat, List.cons_append, Matches.deriv_iff]
           exact hs
       | right h' hn' =>
         simp [inj, hn]
@@ -90,14 +90,14 @@ theorem inj_posix {r : Regex α} {v : Value α} {c : α} (h : POSIX (r.deriv c) 
         rw [List.append_eq_cons_iff] at hxy
         simp [hx] at hxy
         rcases hxy with ⟨z, hx, hs⟩
-        rw [hx, Matches_deriv] at hr₁
+        rw [hx, Matches.deriv_iff] at hr₁
         rw [hs] at hn'
         exact absurd (Matches.mul rfl hr₁ hr₂) hn'
     · cases h with
       | mul h₁ h₂ hn' =>
         simp [inj, hn]
         refine POSIX.mul (ih₁ h₁) h₂ ?_
-        simp_rw [inj_flat, List.cons_append, Matches_deriv]
+        simp_rw [inj_flat, List.cons_append, Matches.deriv_iff]
         exact hn'
   | star r ih =>
     match v with
@@ -106,7 +106,7 @@ theorem inj_posix {r : Regex α} {v : Value α} {c : α} (h : POSIX (r.deriv c) 
       cases h with
       | mul h₁ h₂ hs =>
         refine POSIX.stars (ih h₁) h₂ (by simp [inj_flat]) ?_
-        simp_rw [inj_flat, List.cons_append, Matches_deriv]
+        simp_rw [inj_flat, List.cons_append, Matches.deriv_iff]
         exact hs
 
 theorem injs_posix {r : Regex α} {v : Value α} {s : List α} (h : POSIX (r.derivs s) v) :
@@ -124,7 +124,7 @@ theorem injs_posix {r : Regex α} {v : Value α} {s : List α} (h : POSIX (r.der
 theorem matches_parse_posix_iff {r : Regex α} {s : List α} :
   r.Matches s ↔ ∃ v, r.parse s = some v ∧ POSIX r v := by
   simp [parse]
-  rw [Matches_derivs, ←nullable_iff_matches_nil]
+  rw [Matches.derivs_iff, ←nullable_iff_matches_nil]
   constructor
   · intro h
     exact ⟨h, injs_posix (mkeps_posix h)⟩
