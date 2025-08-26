@@ -20,7 +20,7 @@ inductive POSIX : Regex α → Value α → Prop
   | mul {r₁ r₂ : Regex α} {v₁ v₂ : Value α} :
     POSIX r₁ v₁ →
     POSIX r₂ v₂ →
-    ¬(∃ s₃ s₄, s₃ ≠ [] ∧ s₃ ++ s₄ = v₂.flat ∧ r₁.Matches (v₁.flat ++ s₃) ∧ r₂.Matches s₄) →
+    ¬(∃ s₃ s₄, v₁.flat ++ v₂.flat = s₃ ++ s₄ ∧ v₁.flat.length < s₃.length ∧ r₁.Matches s₃ ∧ r₂.Matches s₄) →
     POSIX (mul r₁ r₂) (seq v₁ v₂)
   | star_nil {r : Regex α} :
     POSIX (star r) (stars [])
@@ -28,7 +28,7 @@ inductive POSIX : Regex α → Value α → Prop
     POSIX r v →
     POSIX (star r) (stars vs) →
     v.flat ≠ [] →
-    ¬(∃ s₃ s₄, s₃ ≠ [] ∧ s₃ ++ s₄ = (stars vs).flat ∧ r.Matches (v.flat ++ s₃) ∧ (star r).Matches s₄) →
+    ¬(∃ s₃ s₄, v.flat ++ (stars vs).flat = s₃ ++ s₄ ∧ v.flat.length < s₃.length ∧ r.Matches s₃ ∧ (star r).Matches s₄) →
     POSIX (star r) (stars (v::vs))
 
 theorem POSIX.inhab {r : Regex α} {v : Value α} : POSIX r v → Inhab v r
@@ -47,8 +47,8 @@ theorem longest_split_unique {r₁ r₂ : Regex α} {s₁₁ s₁₂ s₂₁ s�
   (hs : s₁₁ ++ s₁₂ = s₂₁ ++ s₂₂)
   (hr₁₁ : r₁.Matches s₁₁) (hr₁₂ : r₂.Matches s₁₂)
   (hr₂₁ : r₁.Matches s₂₁) (hr₂₂ : r₂.Matches s₂₂)
-  (h₁ : ¬(∃ s₃ s₄, s₃ ≠ [] ∧ s₃ ++ s₄ = s₁₂ ∧ r₁.Matches (s₁₁ ++ s₃) ∧ r₂.Matches s₄))
-  (h₂ : ¬(∃ s₃ s₄, s₃ ≠ [] ∧ s₃ ++ s₄ = s₂₂ ∧ r₁.Matches (s₂₁ ++ s₃) ∧ r₂.Matches s₄)) :
+  (h₁ : ¬(∃ s₃ s₄, s₁₁ ++ s₁₂ = s₃ ++ s₄ ∧ s₁₁.length < s₃.length ∧ r₁.Matches s₃ ∧ r₂.Matches s₄))
+  (h₂ : ¬(∃ s₃ s₄, s₂₁ ++ s₂₂ = s₃ ++ s₄ ∧ s₂₁.length < s₃.length ∧ r₁.Matches s₃ ∧ r₂.Matches s₄)) :
   s₁₁ = s₂₁ ∧ s₁₂ = s₂₂ := by
   rw [List.append_eq_append_iff] at hs
   cases hs with
@@ -58,14 +58,50 @@ theorem longest_split_unique {r₁ r₂ : Regex α} {s₁₁ s₁₂ s₂₁ s�
     cases as with
     | nil => rfl
     | cons x xs =>
-      exact absurd hr₂₂ (h₁ (x::xs) (by simp) s₂₂ rfl hr₂₁)
+      simp_all
+      exact absurd hr₂₂ (h₁ (s₁₁ ++ x :: xs) s₂₂ (by simp) (by simp) hr₂₁)
   | inr hs =>
     rcases hs with ⟨as, hs⟩
     simp_all
     cases as with
     | nil => rfl
     | cons x xs =>
-      exact absurd hr₁₂ (h₂ (x::xs) (by simp) s₁₂ rfl hr₁₁)
+      simp_all
+      exact absurd hr₁₂ (h₂ (s₂₁ ++ x::xs) s₁₂ (by simp) (by simp) hr₁₁)
+
+theorem List.prefix_lt {s₁ s₂ s₃ s₄ : List α} :
+  s₁ ++ s₂ = s₃ ++ s₄ →
+  s₁.length < s₃.length →
+  ∃ s₃₁ s₃₂, s₃₁ ++ s₃₂ = s₃ ∧ s₃₁ = s₁ := by
+  intro hs hs₃
+  induction s₁ generalizing s₃ with
+  | nil =>
+    simp at hs hs₃
+    exact ⟨[], s₃, by simp, rfl⟩
+  | cons x xs ih =>
+    cases s₃ with
+    | nil => simp at hs₃
+    | cons y ys =>
+      simp at hs hs₃
+      cases hs.left
+      rcases ih hs.right hs₃ with ⟨s₃₁, s₃₂, hs₃', hxs⟩
+      subst hxs hs₃'
+      exact ⟨x::s₃₁, s₃₂, by simp, rfl⟩
+
+theorem longest_split_iff {P₁ P₂ : List α → Prop} {s₁ s₂ : List α} :
+  (¬(∃ s₃ s₄, s₃ ≠ [] ∧ s₃ ++ s₄ = s₂ ∧ P₁ (s₁ ++ s₃) ∧ P₂ s₄)) ↔
+  (¬(∃ s₃ s₄, s₁ ++ s₂ = s₃ ++ s₄ ∧ s₁.length < s₃.length ∧ P₁ s₃ ∧ P₂ s₄)) := by
+  simp
+  constructor
+  · intro h s₃ s₄ hs hs₃ hp
+    rcases List.prefix_lt hs hs₃ with ⟨s₃₁, s₃₂, hs₃', hs₁⟩
+    subst hs₁ hs₃'
+    simp [List.length_pos_iff] at hs₃
+    simp at hs
+    exact h s₃₂ hs₃ s₄ hs.symm hp
+  · intro h s₃ hs₃ s₄ hs₂ hp
+    rw [←ne_eq, List.ne_nil_iff_length_pos] at hs₃
+    exact h (s₁ ++ s₃) s₄ (by simp [hs₂]) (by simp [hs₃]) hp
 
 theorem POSIX.unique {r : Regex α} {v₁ v₂ : Value α} (hv : v₁.flat = v₂.flat) (h₁ : POSIX r v₁) (h₂ : POSIX r v₂) :
   v₁ = v₂ := by

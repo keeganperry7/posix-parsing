@@ -29,8 +29,7 @@ theorem mkeps_posix {r : Regex α} (hn : r.nullable) :
     simp at hn
     simp only [mkeps]
     refine POSIX.mul (ih₁ hn.left) (ih₂ hn.right) ?_
-    rw [mkeps_flat]
-    simp_all
+    simp [mkeps_flat]
   | star r ih =>
     simp only [mkeps]
     apply POSIX.star_nil
@@ -78,11 +77,14 @@ theorem inj_posix {r : Regex α} {v : Value α} {c : α} (h : POSIX (r.deriv c) 
         | mul h₁ h₂ hs =>
           simp [inj, hn]
           refine POSIX.mul (ih₁ h₁) h₂ ?_
+          rw [←longest_split_iff]
+          rw [←longest_split_iff] at hs
           simp_rw [inj_flat, List.cons_append, Matches.deriv_iff]
           exact hs
       | right h' hn' =>
         simp [inj, hn]
         refine POSIX.mul (mkeps_posix hn) (ih₂ h') ?_
+        rw [←longest_split_iff]
         simp
         intro x hx y hxy hr₁ hr₂
         rw [inj_flat] at hxy
@@ -97,6 +99,8 @@ theorem inj_posix {r : Regex α} {v : Value α} {c : α} (h : POSIX (r.deriv c) 
       | mul h₁ h₂ hn' =>
         simp [inj, hn]
         refine POSIX.mul (ih₁ h₁) h₂ ?_
+        rw [←longest_split_iff]
+        rw [←longest_split_iff] at hn'
         simp_rw [inj_flat, List.cons_append, Matches.deriv_iff]
         exact hn'
   | star r ih =>
@@ -106,6 +110,8 @@ theorem inj_posix {r : Regex α} {v : Value α} {c : α} (h : POSIX (r.deriv c) 
       cases h with
       | mul h₁ h₂ hs =>
         refine POSIX.stars (ih h₁) h₂ (by simp [inj_flat]) ?_
+        rw [←longest_split_iff]
+        rw [←longest_split_iff] at hs
         simp_rw [inj_flat, List.cons_append, Matches.deriv_iff]
         exact hs
 
