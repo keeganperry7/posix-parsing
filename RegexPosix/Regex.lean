@@ -152,6 +152,14 @@ def deriv : Regex α → α → Regex α
       else (r₁.deriv c).mul r₂
   | star r, c => (r.deriv c).mul r.star
 
+theorem deriv_mul_nullable {r₁ r₂ : Regex α} {c : α} (hn₁ : r₁.nullable) :
+  (r₁.mul r₂).deriv c = ((r₁.deriv c).mul r₂).plus (r₂.deriv c) :=
+  if_pos hn₁
+
+theorem deriv_mul_not_nullable {r₁ r₂ : Regex α} {c : α} (hn₁ : ¬r₁.nullable) :
+  (r₁.mul r₂).deriv c = (r₁.deriv c).mul r₂ :=
+  if_neg hn₁
+
 theorem Matches_deriv_mul_iff {r₁ r₂ : Regex α} {c : α} {s : List α} :
   Matches s ((r₁.mul r₂).deriv c) ↔ Matches s ((r₁.deriv c).mul r₂) ∨ (r₁.nullable ∧ Matches s (r₂.deriv c)) := by
   rw [deriv]
