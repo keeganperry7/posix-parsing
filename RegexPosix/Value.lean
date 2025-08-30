@@ -28,10 +28,10 @@ inductive Parse : Regex α → Type u
     Parse r.star →
     Parse r.star
 
-def Parse.cast {r₁ r₂ : Regex α} (h : r₁ = r₂) (p : Parse r₁) : Parse r₂ :=
+abbrev Parse.cast {r₁ r₂ : Regex α} (h : r₁ = r₂) (p : Parse r₁) : Parse r₂ :=
   h ▸ p
 
-def Parse.cast_rfl {r : Regex α} {p : Parse r} : p.cast rfl = p := rfl
+theorem Parse.cast_rfl {r : Regex α} {p : Parse r} : p.cast rfl = p := rfl
 
 protected def Parse.repr [Repr α] {r : Regex α} (p : Parse r) (n : Nat) : Std.Format :=
   let _ : Std.ToFormat α := ⟨repr⟩

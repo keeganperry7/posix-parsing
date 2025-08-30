@@ -43,8 +43,7 @@ theorem inj_posix {r : Regex α} {c : α} {p : Parse (r.deriv c)} (h : POSIX p) 
   | case4 r₁ r₂ c hn₁ p₁ p₂ p heq ih₁ =>
     generalize_proofs k at heq
     generalize hr : (r₁.mul r₂).deriv c = r' at *
-    simp [hn₁] at hr
-    subst hr heq
+    subst k heq
     cases h with
     | left h =>
       cases h with
@@ -55,8 +54,7 @@ theorem inj_posix {r : Regex α} {c : α} {p : Parse (r.deriv c)} (h : POSIX p) 
   | case5 r₁ r₂ c hn₁ p₂ p heq ih₂ =>
     generalize_proofs k at heq
     generalize hr : (r₁.mul r₂).deriv c = r' at *
-    simp [hn₁] at hr
-    subst hr heq
+    subst k heq
     cases h with
     | right h hn =>
       refine POSIX.mul (mkeps_posix) (ih₂ h) ?_
