@@ -19,19 +19,24 @@ def mkeps : {r : Regex α} → r.nullable → Parse r
   | mul _ _, hn =>
     have ⟨hn₁, hn₂⟩ := Bool.and_eq_true_iff.mp hn
     seq (mkeps hn₁) (mkeps hn₂)
-  | star _, _ => star_nil
+  | star r, _ =>
+    if hn : r.nullable
+      then (mkeps hn).star_cons star_nil
+      else star_nil
 
 theorem mkeps_flat {r : Regex α} {hn : r.nullable} :
   (mkeps hn).flat = [] := by
   fun_induction mkeps with
   | case1 => rfl
   | case2 r₁ r₂ hn hn₁ ih₁ =>
-    simp only [Parse.flat, ih₁]
+    simp only [flat, ih₁]
   | case3 r₁ r₂ hn hn₁ hn₂ ih₂ =>
-    simp only [Parse.flat, ih₂]
+    simp only [flat, ih₂]
   | case4 r₁ r₂ hn hn₁ hn₂ ih₁ ih₂ =>
     simp [ih₁, ih₂]
-  | case5 => rfl
+  | case5 _ _ _ ih =>
+    simp [ih]
+  | case6 => rfl
 
 variable [DecidableEq α]
 
@@ -48,7 +53,10 @@ def inj : {r : Regex α} → (c : α) → Parse (r.deriv c) → Parse r
       else
         match p.cast (deriv_mul_not_nullable hn₁) with
         | seq p₁ p₂ => seq (inj c p₁) p₂
-  | .star r, c, seq p ps => star_cons (inj c p) ps
+  | .star r, c, seq p ps =>
+    if ps.flat = []
+      then star_cons (inj c p) star_nil
+      else star_cons (inj c p) ps
 
 theorem inj_flat {r : Regex α} {c : α} {p : Parse (r.deriv c)} :
   (inj c p).flat = c::p.flat := by
@@ -84,7 +92,9 @@ theorem inj_flat {r : Regex α} {c : α} {p : Parse (r.deriv c)} :
     simp [deriv, hn] at hr
     subst hr heq
     simp [ih₁]
-  | case7 r c p ps ih =>
+  | case7 r c p ps hps ih =>
+    simp [ih, hps]
+  | case8 r c p ps _ ih =>
     simp [ih]
 
 def injs : {r : Regex α} → (s : List α) → (Parse (r.derivs s)) → Parse r

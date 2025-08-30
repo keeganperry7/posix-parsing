@@ -21,7 +21,10 @@ theorem mkeps_posix {r : Regex α} {hn : r.nullable} :
     exact hn₁
   | case4 r₁ r₂ hn hn₁ hn₂ ih₁ ih₂ =>
     exact POSIX.mul ih₁ ih₂ (by simp [mkeps_flat])
-  | case5 r hn => exact POSIX.star_nil
+  | case5 r _ hn ih =>
+    exact POSIX.star_nil_null hn ih mkeps_flat
+  | case6 r _ hn =>
+    exact POSIX.star_nil hn
 
 variable [DecidableEq α]
 
@@ -78,10 +81,19 @@ theorem inj_posix {r : Regex α} {c : α} {p : Parse (r.deriv c)} (h : POSIX p) 
       refine POSIX.mul (ih₁ h₁) h₂ ?_
       simp_rw [inj_flat, List.cons_append, Matches.deriv_iff]
       exact hs
-  | case7 r c p ps ih =>
+  | case7 r c p ps hps ih =>
     cases h with
     | mul h₁ h₂ hs =>
-      refine POSIX.stars (ih h₁) h₂ (by simp [inj_flat]) ?_
+      clear hs
+      apply POSIX.stars_tail_empty
+      exact ih h₁
+      exact h₂
+      simp [inj_flat]
+      exact hps
+  | case8 r c p ps hps ih =>
+    cases h with
+    | mul h₁ h₂ hs =>
+      refine POSIX.stars (ih h₁) h₂ (by simp [inj_flat]) hps ?_
       simp_rw [inj_flat, List.cons_append, Matches.deriv_iff]
       exact hs
 

@@ -1,4 +1,5 @@
 import RegexPosix.Parse
+import RegexPosix.POSIX
 
 open Regex
 
@@ -25,6 +26,7 @@ def r₄ : Regex Char := epsilon.star
 -- (a*)*
 def r₅ : Regex Char := star (star 'a')
 #eval r₅.parse "aaa".toList
+#eval r₅.parse "".toList
 
 -- (a + ε + b)*b*
 def r₆ : Regex Char := (plus 'a' (plus epsilon 'b')).star.mul (star 'b')
