@@ -87,9 +87,9 @@ theorem inj_flat {r : Regex α} {c : α} {p : Parse (r.deriv c)} :
   | case7 r c p ps ih =>
     simp [ih]
 
-def injs : {r : Regex α} → (s : List α) → (Parse (r.derivs s)) → Parse r
-  | _, [], p => p
-  | _, c::s, p => inj c (injs s p)
+def injs {r : Regex α} : (s : List α) → (Parse (r.derivs s)) → Parse r
+  | [], p => p
+  | c::s, p => inj c (injs s p)
 
 theorem injs_flat {r : Regex α} {s : List α} {p : Parse (r.derivs s)} :
   (injs s p).flat = s ++ p.flat := by

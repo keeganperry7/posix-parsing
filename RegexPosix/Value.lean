@@ -29,7 +29,7 @@ inductive Parse : Regex α → Type u
     Parse r.star
 
 abbrev Parse.cast {r₁ r₂ : Regex α} (h : r₁ = r₂) (p : Parse r₁) : Parse r₂ :=
-  h ▸ p
+  h.rec p
 
 theorem Parse.cast_rfl {r : Regex α} {p : Parse r} : p.cast rfl = p := rfl
 
