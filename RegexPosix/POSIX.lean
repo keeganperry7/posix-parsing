@@ -24,7 +24,7 @@ inductive POSIX : {r : Regex α} → Parse r → Prop
     POSIX (p₁.seq p₂)
   | star_nil :
     POSIX star_nil
-  | stars {r : Regex α} {p : Parse r} {ps : Parse (star r)} :
+  | star_cons {r : Regex α} {p : Parse r} {ps : Parse (star r)} :
     POSIX p →
     POSIX ps →
     p.flat ≠ [] →
@@ -96,15 +96,15 @@ theorem POSIX.unique {r : Regex α} {p₁ p₂ : Parse r} (hp : p₁.flat = p₂
   | star_nil =>
     cases h₂ with
     | star_nil => rfl
-    | stars _ _ hp' =>
+    | star_cons _ _ hp' =>
       simp at hp
       exact absurd hp.left hp'
-  | stars h₁₁ h₁₂ hp₁ hs₁ ih₁ ih₂ =>
+  | star_cons h₁₁ h₁₂ hp₁ hs₁ ih₁ ih₂ =>
     cases h₂ with
     | star_nil =>
       simp at hp
       exact absurd hp.left hp₁
-    | stars h₂₁ h₂₂ hp₂ hs₂ =>
+    | star_cons h₂₁ h₂₂ hp₂ hs₂ =>
       simp at hp
       have hv' := longest_split_unique hp h₁₁.matches h₁₂.matches h₂₁.matches h₂₂.matches hs₁ hs₂
       have ih₂ := ih₂ hv'.right h₂₂

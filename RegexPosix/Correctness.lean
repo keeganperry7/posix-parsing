@@ -79,7 +79,7 @@ theorem inj_posix {r : Regex α} {c : α} {p : Parse (r.deriv c)} (h : POSIX p) 
   | case7 r c p ps ih =>
     cases h with
     | mul h₁ h₂ hs =>
-      refine POSIX.stars (ih h₁) h₂ (by simp [inj_flat]) ?_
+      refine POSIX.star_cons (ih h₁) h₂ (by simp [inj_flat]) ?_
       simp_rw [inj_flat, List.cons_append, Matches.deriv_iff]
       exact hs
 
