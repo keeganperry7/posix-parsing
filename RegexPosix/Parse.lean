@@ -99,12 +99,11 @@ theorem injs_flat {r : Regex α} {s : List α} {p : Parse (r.derivs s)} :
     simp [injs]
     rw [inj_flat, ih]
 
-def Regex.parse : (r : Regex α) → List α → Option (Parse r)
-  | r, s =>
-    let r' := r.derivs s
-    if h : r'.nullable
-      then some (injs s (mkeps h))
-      else none
+def Regex.parse (r : Regex α) (s :List α) : Option (Parse r) :=
+  let r' := r.derivs s
+  if h : r'.nullable
+    then some (injs s (mkeps h))
+    else none
 
 theorem parse_flat {r : Regex α} {s : List α} {p : Parse r} :
   r.parse s = some p → p.flat = s := by

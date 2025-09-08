@@ -16,7 +16,7 @@ inductive POSIX : {r : Regex α} → Parse r → Prop
   | right {r₁ r₂ : Regex α} {p : Parse r₂} :
     POSIX p →
     ¬r₁.Matches p.flat →
-    @POSIX (r₁.plus r₂) p.right
+    POSIX (r := r₁.plus r₂) p.right
   | mul {r₁ r₂ : Regex α} {p₁ : Parse r₁} {p₂ : Parse r₂} :
     POSIX p₁ →
     POSIX p₂ →
