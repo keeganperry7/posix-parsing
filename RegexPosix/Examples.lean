@@ -31,3 +31,7 @@ def r₅ : Regex Char := star (star 'a')
 -- (a + ε + b)*b*
 def r₆ : Regex Char := (plus 'a' (plus epsilon 'b')).star.mul (star 'b')
 #eval r₆.parse "aaabbb".toList
+
+-- (a + aa)(ε + ab)
+def r₇ : Regex Char := (plus 'a' (mul 'a' 'a')).mul (plus epsilon (mul 'a' 'b'))
+#eval r₇.parse "aab".toList
