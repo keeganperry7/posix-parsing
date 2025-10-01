@@ -79,7 +79,7 @@ theorem Parse.matches {r : Regex α} :
   | star_nil => Matches.star_nil
   | star_cons p ps => Matches.stars rfl p.matches ps.matches
 
-theorem matches_parse {r : Regex α} {s : List α} :
+theorem Matches.exists_parse {r : Regex α} {s : List α} :
   r.Matches s → ∃ p : Parse r, p.flat = s := by
   intro h
   induction h with
