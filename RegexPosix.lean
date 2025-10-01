@@ -3,5 +3,6 @@
 import RegexPosix.Regex
 import RegexPosix.Value
 import RegexPosix.POSIX
-import RegexPosix.Parse
+import RegexPosix.Parser
 import RegexPosix.Correctness
+import RegexPosix.Examples

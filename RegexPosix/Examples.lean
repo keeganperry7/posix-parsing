@@ -1,4 +1,4 @@
-import RegexPosix.Parse
+import RegexPosix.Parser
 
 open Regex
 
