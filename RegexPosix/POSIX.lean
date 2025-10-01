@@ -34,12 +34,12 @@ inductive POSIX : {r : Regex α} → Parse r → Prop
 theorem POSIX.matches {r : Regex α} {p : Parse r} : POSIX p → r.Matches p.flat :=
   fun _ => p.matches
 
-theorem longest_split_unique {r₁ r₂ : Regex α} {s₁₁ s₁₂ s₂₁ s₂₂ : List α}
+theorem longest_split_unique {P₁ P₂ : List α → Prop} {s₁₁ s₁₂ s₂₁ s₂₂ : List α}
   (hs : s₁₁ ++ s₁₂ = s₂₁ ++ s₂₂)
-  (hr₁₁ : r₁.Matches s₁₁) (hr₁₂ : r₂.Matches s₁₂)
-  (hr₂₁ : r₁.Matches s₂₁) (hr₂₂ : r₂.Matches s₂₂)
-  (h₁ : ¬(∃ s₃ s₄, s₃ ≠ [] ∧ s₃ ++ s₄ = s₁₂ ∧ r₁.Matches (s₁₁ ++ s₃) ∧ r₂.Matches s₄))
-  (h₂ : ¬(∃ s₃ s₄, s₃ ≠ [] ∧ s₃ ++ s₄ = s₂₂ ∧ r₁.Matches (s₂₁ ++ s₃) ∧ r₂.Matches s₄)) :
+  (hr₁₁ : P₁ s₁₁) (hr₁₂ : P₂ s₁₂)
+  (hr₂₁ : P₁ s₂₁) (hr₂₂ : P₂ s₂₂)
+  (h₁ : ¬(∃ s₃ s₄, s₃ ≠ [] ∧ s₃ ++ s₄ = s₁₂ ∧ P₁ (s₁₁ ++ s₃) ∧ P₂ s₄))
+  (h₂ : ¬(∃ s₃ s₄, s₃ ≠ [] ∧ s₃ ++ s₄ = s₂₂ ∧ P₁ (s₂₁ ++ s₃) ∧ P₂ s₄)) :
   s₁₁ = s₂₁ ∧ s₁₂ = s₂₂ := by
   rw [List.append_eq_append_iff] at hs
   cases hs with
@@ -91,7 +91,12 @@ theorem POSIX.unique {r : Regex α} {p₁ p₂ : Parse r} (hp : p₁.flat = p₂
     cases h₂ with
     | mul h₂₁ h₂₂ hs₂ =>
       simp at hp
-      have hv' := longest_split_unique hp h₁₁.matches h₁₂.matches h₂₁.matches h₂₂.matches hs₁ hs₂
+      have hv' :=
+        longest_split_unique
+          hp
+          h₁₁.matches h₁₂.matches
+          h₂₁.matches h₂₂.matches
+          hs₁ hs₂
       rw [ih₁ hv'.left h₂₁, ih₂ hv'.right h₂₂]
   | star_nil =>
     cases h₂ with
@@ -106,7 +111,12 @@ theorem POSIX.unique {r : Regex α} {p₁ p₂ : Parse r} (hp : p₁.flat = p₂
       exact absurd hp.left hp₁
     | star_cons h₂₁ h₂₂ hp₂ hs₂ =>
       simp at hp
-      have hv' := longest_split_unique hp h₁₁.matches h₁₂.matches h₂₁.matches h₂₂.matches hs₁ hs₂
+      have hv' :=
+        longest_split_unique
+          hp
+          h₁₁.matches h₁₂.matches
+          h₂₁.matches h₂₂.matches
+          hs₁ hs₂
       have ih₂ := ih₂ hv'.right h₂₂
       simp at ih₂
       rw [ih₁ hv'.left h₂₁, ih₂]
