@@ -1,4 +1,4 @@
-import RegexPosix.Parse
+import RegexPosix.Parser
 
 open Regex
 
@@ -24,7 +24,6 @@ def r₄ : Regex Char := epsilon.star
 
 -- (a*)*
 def r₅ : Regex Char := star (star 'a')
-#eval (r₅.deriv 'a').deriv 'a'
 #eval r₅.parse "aaa".toList
 
 -- (a + ε + b)*b*
