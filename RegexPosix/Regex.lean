@@ -4,12 +4,12 @@ import Mathlib.Tactic.SimpRw
 universe u
 
 inductive Regex (α :  Type u) : Type u where
-  | emptyset : Regex α
-  | epsilon : Regex α
-  | char : α → Regex α
-  | plus : Regex α → Regex α → Regex α
-  | mul : Regex α → Regex α → Regex α
-  | star : Regex α → Regex α
+  | emptyset : Regex α -- ∅
+  | epsilon : Regex α -- ε
+  | char : α → Regex α -- c
+  | plus : Regex α → Regex α → Regex α -- r₁ + r₂
+  | mul : Regex α → Regex α → Regex α -- r₁ · r₂
+  | star : Regex α → Regex α -- r*
   deriving Repr
 
 namespace Regex
