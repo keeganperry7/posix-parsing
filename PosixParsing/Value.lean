@@ -1,4 +1,4 @@
-import RegexPosix.Regex
+import PosixParsing.Regex
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Data.Bool.Basic
 

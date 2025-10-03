@@ -1,5 +1,5 @@
-import RegexPosix.POSIX
-import RegexPosix.Parser
+import PosixParsing.POSIX
+import PosixParsing.Parser
 
 open Regex
 open Parse

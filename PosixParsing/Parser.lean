@@ -1,4 +1,4 @@
-import RegexPosix.Value
+import PosixParsing.Value
 import Mathlib.Tactic.GeneralizeProofs
 
 open Parse

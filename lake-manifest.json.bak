@@ -91,5 +91,5 @@
    "inputRev": "main",
    "inherited": true,
    "configFile": "lakefile.toml"}],
- "name": "«posix-parsing»",
+ "name": "«regex-posix»",
  "lakeDir": ".lake"}
